@@ -1,0 +1,178 @@
+--[[
+	QUANTUM UI LIBRARY [VAMPIR EDITION]
+	Base Library: Late
+	Modified & Enhanced: CostyTR
+]]
+
+--// Connections
+local GetService = game.GetService
+local Connect = game.Loaded.Connect
+local Wait = game.Loaded.Wait
+local Clone = game.Clone 
+local Destroy = game.Destroy 
+
+if (not game:IsLoaded()) then
+	local Loaded = game.Loaded
+	Loaded.Wait(Loaded);
+end
+
+--// Services
+local TweenService = GetService(game, "TweenService")
+local Lighting = GetService(game, "Lighting")
+local UserInputService = GetService(game, "UserInputService")
+local CoreGui = GetService(game, "CoreGui")
+
+--// Global Settings
+local Setup = {
+	Keybind = Enum.KeyCode.RightShift,
+	Transparency = 0.25, -- Transparan Siyah Hava
+	ThemeMode = "Dark",
+}
+
+local Theme = {
+	Primary = Color3.fromRGB(15, 15, 15),
+	Secondary = Color3.fromRGB(20, 20, 20),
+	Component = Color3.fromRGB(25, 25, 25),
+	Interactables = Color3.fromRGB(126, 124, 245), -- Mor/Mavi vurgu
+	QuantumGreen = Color3.fromRGB(0, 255, 120), -- Intro Yazısı
+	Title = Color3.fromRGB(255, 255, 255),
+	Description = Color3.fromRGB(180, 180, 180),
+}
+
+local Library = {}
+local Animations = {}
+
+--// Tween Helper
+local function SimpleTween(obj, time, prop)
+	TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), prop):Play()
+end
+
+--// Library Initialization
+function Library:CreateWindow(Settings: { Title: string, Owner: string, Size: UDim2, Keybind: Enum.KeyCode })
+	local Window = Instance.new("ScreenGui")
+	Window.Name = "QuantumVampir"
+	Window.Parent = (gethui and gethui()) or CoreGui
+
+	--// 1. INTRO SISTEMI (BLURLU & VAMPIR)
+	local function StartIntro()
+		local Blur = Instance.new("BlurEffect", Lighting)
+		Blur.Size = 0
+		
+		local IntroFrame = Instance.new("Frame", Window)
+		IntroFrame.Size = UDim2.new(1, 0, 1, 0)
+		IntroFrame.BackgroundTransparency = 1
+		IntroFrame.ZIndex = 1000
+
+		local MainText = Instance.new("TextLabel", IntroFrame)
+		MainText.Size = UDim2.new(1, 0, 1, 0)
+		MainText.BackgroundTransparency = 1
+		MainText.Text = "VAMPIR"
+		MainText.Font = Enum.Font.GothamBold
+		MainText.TextSize = 100
+		MainText.TextColor3 = Theme.QuantumGreen
+		MainText.TextTransparency = 1
+
+		local SubText = Instance.new("TextLabel", IntroFrame)
+		SubText.Size = UDim2.new(1, 0, 0, 50)
+		SubText.Position = UDim2.new(0, 0, 0.62, 0)
+		SubText.BackgroundTransparency = 1
+		SubText.Text = "Made by CostyTR"
+		SubText.Font = Enum.Font.GothamMedium
+		SubText.TextSize = 30
+		SubText.TextColor3 = Color3.fromRGB(255, 255, 255)
+		SubText.TextTransparency = 1
+
+		-- Animasyon Başlangıcı
+		SimpleTween(Blur, 1.2, {Size = 28})
+		task.wait(0.5)
+		SimpleTween(MainText, 1, {TextTransparency = 0})
+		task.wait(0.6)
+		SimpleTween(SubText, 1, {TextTransparency = 0})
+		
+		task.wait(3) -- Ekranda kalma süresi
+
+		-- Kapanış
+		SimpleTween(MainText, 0.8, {TextTransparency = 1})
+		SimpleTween(SubText, 0.8, {TextTransparency = 1})
+		SimpleTween(Blur, 1.2, {Size = 0})
+		
+		task.wait(1.2)
+		Blur:Destroy()
+		IntroFrame:Destroy()
+	end
+
+	--// 2. ANA MENÜ TASARIMI (TRANS PARAN SİYAH)
+	local Main = Instance.new("Frame", Window)
+	Main.Name = "Main"
+	Main.Size = Settings.Size or UDim2.new(0, 550, 0, 350)
+	Main.Position = UDim2.new(0.5, -275, 0.5, -175)
+	Main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	Main.BackgroundTransparency = Setup.Transparency
+	Main.BorderSizePixel = 0
+	Main.Visible = false -- Intro bitene kadar gizli
+	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+
+	local Stroke = Instance.new("UIStroke", Main)
+	Stroke.Color = Color3.fromRGB(40, 40, 45)
+	Stroke.Thickness = 1.2
+
+	-- Sidebar
+	local Sidebar = Instance.new("Frame", Main)
+	Sidebar.Size = UDim2.new(0, 150, 1, 0)
+	Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+	Sidebar.BackgroundTransparency = 0.4
+	Instance.new("UICorner", Sidebar)
+
+	-- Footer (Made By CostyTR & Owner)
+	local Footer = Instance.new("TextLabel", Sidebar)
+	Footer.Size = UDim2.new(1, 0, 0, 40)
+	Footer.Position = UDim2.new(0, 0, 1, -40)
+	Footer.BackgroundTransparency = 1
+	Footer.Text = "Made By CostyTR\n& " .. (Settings.Owner or "Late")
+	Footer.TextColor3 = Color3.fromRGB(150, 150, 150)
+	Footer.Font = Enum.Font.GothamSemibold
+	Footer.TextSize = 10
+
+	--// LOGIC: INTRO BİTİNCE BAŞLAT
+	task.spawn(function()
+		StartIntro()
+		Main.Visible = true
+		-- Menü açılış efekti
+		Main.Size = UDim2.new(0, 0, 0, 0)
+		SimpleTween(Main, 0.5, {Size = Settings.Size or UDim2.new(0, 550, 0, 350)})
+	end)
+
+	-- Sürükleme Sistemi
+	local dragging, dragInput, dragStart, startPos
+	Main.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true; dragStart = input.Position; startPos = Main.Position
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = input.Position - dragStart
+			Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+	end)
+
+	-- Menü Kapatma Tuşu
+	UserInputService.InputBegan:Connect(function(input, gpe)
+		if not gpe and input.KeyCode == (Settings.Keybind or Setup.Keybind) then
+			Main.Visible = not Main.Visible
+		end
+	end)
+
+	local Options = {}
+	-- Buraya Tab ve Component fonksiyonlarını Late'nin kodundaki gibi ekleyebilirsin...
+	function Options:CreateTab(name)
+		-- Tab oluşturma mantığı buraya gelecek (v1'deki gibi)
+	end
+
+	return Options
+end
+
+return Library
