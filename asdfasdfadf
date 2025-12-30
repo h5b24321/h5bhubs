@@ -1,0 +1,247 @@
+--[[
+    QUANTUM UI LIBRARY V2 - MAX ANIMATION
+    Exclusively Branded for: CostyTR
+    Features: Ultra-Smooth Tweens, MacOS Controls, Custom Resizing, Glass Theme
+]]
+
+local Quantum = {}
+Quantum.__index = Quantum
+
+--// Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+
+--// Theme & Config
+local Theme = {
+    Main = Color3.fromRGB(0, 0, 0),
+    Accent = Color3.fromRGB(0, 255, 120), -- Vampir Yeşili
+    Text = Color3.fromRGB(255, 255, 255),
+    SecondaryText = Color3.fromRGB(180, 180, 180),
+    Transparency = 0.25,
+    Outline = Color3.fromRGB(50, 50, 55),
+    AnimSpeed = 0.3
+}
+
+--// Ultra Smooth Tween Function
+local function QuickTween(obj, prop, time)
+    local info = TweenInfo.new(time or Theme.AnimSpeed, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(obj, info, prop)
+    tween:Play()
+    return tween
+end
+
+--// Window Resizing (Smooth Logic)
+local function MakeResizable(frame, minSize)
+    local resizer = Instance.new("Frame", frame)
+    resizer.Size = UDim2.new(0, 25, 0, 25)
+    resizer.Position = UDim2.new(1, -25, 1, -25)
+    resizer.BackgroundTransparency = 1
+    resizer.ZIndex = 100
+
+    local dragging, dragStart, startSize
+    resizer.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startSize = frame.Size
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            local newW = math.max(minSize.X, startSize.X.Offset + delta.X)
+            local newH = math.max(minSize.Y, startSize.Y.Offset + delta.Y)
+            QuickTween(frame, {Size = UDim2.new(0, newW, 0, newH)}, 0.1)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+end
+
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Title = cfg.Title or "Quantum Hub"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+    
+    self.Screen = Instance.new("ScreenGui")
+    self.Screen.Name = "CostyTR_QuantumV2"
+    self.Screen.Parent = (gethui and gethui()) or CoreGui
+
+    --// 1. MAX ANIMATED INTRO
+    local function StartIntro()
+        local Blur = Instance.new("BlurEffect", Lighting)
+        Blur.Size = 0
+        
+        local IntroFrame = Instance.new("Frame", self.Screen)
+        IntroFrame.Size = UDim2.new(1, 0, 1, 0)
+        IntroFrame.BackgroundTransparency = 1
+        IntroFrame.ZIndex = 1000
+
+        local MainLabel = Instance.new("TextLabel", IntroFrame)
+        MainLabel.Size = UDim2.new(1, 0, 1, 0)
+        MainLabel.BackgroundTransparency = 1
+        MainLabel.Text = "COSTYTR QUANTUM"
+        MainLabel.Font = Enum.Font.GothamBold
+        MainLabel.TextColor3 = Theme.Accent
+        MainLabel.TextSize = 10
+        MainLabel.TextTransparency = 1
+
+        -- Intro Sequence
+        QuickTween(Blur, {Size = 30}, 1.5)
+        task.wait(0.2)
+        QuickTween(MainLabel, {TextTransparency = 0, TextSize = 85}, 1.2)
+        task.wait(2.5)
+        QuickTween(MainLabel, {TextTransparency = 1, TextSize = 150}, 0.8)
+        QuickTween(Blur, {Size = 0}, 1)
+        task.wait(1)
+        Blur:Destroy(); IntroFrame:Destroy()
+    end
+
+    --// 2. MAIN WINDOW DESIGN
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 600, 0, 400)
+    self.Main.Position = UDim2.new(0.5, -300, 0.5, -200)
+    self.Main.BackgroundColor3 = Theme.Main
+    self.Main.BackgroundTransparency = Theme.Transparency
+    self.Main.BorderSizePixel = 0
+    self.Main.ClipsDescendants = true
+    self.Main.Visible = false
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 15)
+    
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Theme.Outline
+    Stroke.Thickness = 1.8
+
+    -- MacOS Top Bar
+    local TopBar = Instance.new("Frame", self.Main)
+    TopBar.Size = UDim2.new(1, 0, 0, 45)
+    TopBar.BackgroundTransparency = 1
+
+    local Title = Instance.new("TextLabel", TopBar)
+    Title.Size = UDim2.new(1, 0, 1, 0)
+    Title.Text = self.Title
+    Title.TextColor3 = Theme.Text
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 14
+    Title.BackgroundTransparency = 1
+
+    -- MacOS Controls
+    local BtnCont = Instance.new("Frame", TopBar)
+    BtnCont.Size = UDim2.new(0, 80, 1, 0)
+    BtnCont.Position = UDim2.new(0, 15, 0, 0)
+    BtnCont.BackgroundTransparency = 1
+
+    local function CreateMacBtn(color, pos, symbol, func)
+        local btn = Instance.new("TextButton", BtnCont)
+        btn.Size = UDim2.new(0, 14, 0, 14)
+        btn.Position = pos
+        btn.BackgroundColor3 = color
+        btn.Text = symbol
+        btn.TextTransparency = 1 -- Simgeler gizli başlar
+        btn.TextSize = 10
+        btn.Font = Enum.Font.GothamBold
+        btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+
+        -- Hover Animation
+        btn.MouseEnter:Connect(function() 
+            QuickTween(btn, {TextTransparency = 0.3}, 0.2) 
+        end)
+        btn.MouseLeave:Connect(function() 
+            QuickTween(btn, {TextTransparency = 1}, 0.2) 
+        end)
+        btn.MouseButton1Click:Connect(func)
+    end
+
+    -- Actions
+    CreateMacBtn(Color3.fromRGB(255, 95, 87), UDim2.new(0, 0, 0.5, -7), "✕", function() self.Screen:Destroy() end)
+    CreateMacBtn(Color3.fromRGB(255, 189, 46), UDim2.new(0, 22, 0.5, -7), "−", function() self.Main.Visible = false end)
+    CreateMacBtn(Color3.fromRGB(40, 200, 64), UDim2.new(0, 44, 0.5, -7), "⤢", function() 
+        QuickTween(self.Main, {Size = UDim2.new(0, 750, 0, 450)}, 0.5) 
+    end)
+
+    -- Footer
+    local Footer = Instance.new("TextLabel", self.Main)
+    Footer.Size = UDim2.new(1, -30, 0, 30)
+    Footer.Position = UDim2.new(0, 15, 1, -35)
+    Footer.BackgroundTransparency = 1
+    Footer.Text = "Developed by CostyTR"
+    Footer.TextColor3 = Theme.Accent
+    Footer.Font = Enum.Font.GothamBold
+    Footer.TextSize = 11
+    Footer.TextXAlignment = Enum.TextXAlignment.Right
+
+    -- Sürükleme (Smooth Drag)
+    local drag, dragI, dragS, startP
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true; dragS = input.Position; startP = self.Main.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if drag and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragS
+            QuickTween(self.Main, {Position = UDim2.new(startP.X.Scale, startP.X.Offset + delta.X, startP.Y.Scale, startP.Y.Offset + delta.Y)}, 0.1)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
+    end)
+
+    MakeResizable(self.Main, Vector2.new(450, 300))
+
+    -- Start Sequence
+    task.spawn(function()
+        StartIntro()
+        self.Main.Visible = true
+        self.Main.GroupTransparency = 1
+        self.Main.Size = UDim2.new(0, 400, 0, 200) -- Küçülerek başlar
+        QuickTween(self.Main, {Size = UDim2.new(0, 600, 0, 400), GroupTransparency = 0}, 0.8)
+    end)
+
+    return self
+end
+
+--// Örnek Bir Component: Button (Max Animasyonlu)
+function Quantum:CreateButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, -20, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    btn.BackgroundTransparency = 0.5
+    btn.Text = text
+    btn.TextColor3 = Theme.Text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    Instance.new("UICorner", btn)
+    
+    local Stroke = Instance.new("UIStroke", btn)
+    Stroke.Color = Theme.Outline
+    Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    -- MAX ANIMATION
+    btn.MouseEnter:Connect(function()
+        QuickTween(btn, {BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.3}, 0.3)
+        QuickTween(btn, {Size = UDim2.new(1, -10, 0, 42)}, 0.2)
+    end)
+    btn.MouseLeave:Connect(function()
+        QuickTween(btn, {BackgroundColor3 = Color3.fromRGB(30, 30, 35), BackgroundTransparency = 0.5}, 0.3)
+        QuickTween(btn, {Size = UDim2.new(1, -20, 0, 40)}, 0.2)
+    end)
+    btn.MouseButton1Click:Connect(function()
+        local circle = Instance.new("Frame", btn) -- Ripple effect
+        circle.Size = UDim2.new(0, 0, 0, 0)
+        circle.BackgroundColor3 = Color3.new(1,1,1)
+        circle.BackgroundTransparency = 0.5
+        Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+        QuickTween(circle, {Size = UDim2.new(0, 200, 0, 200), BackgroundTransparency = 1}, 0.5)
+        callback()
+    end)
+end
+
+return Quantum
