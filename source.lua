@@ -1,6 +1,6 @@
 --[[
     QUANTUM LIB [ULTRA QUALITY EDITION]
-    Developer: CostyTR
+
     Feature: Fully Animated, Custom Keybind, Anti-Delete
 --]]
 
