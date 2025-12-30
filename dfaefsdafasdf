@@ -1,0 +1,148 @@
+--[[
+    QUANTUM.NZ UI - ULTRA SOURCE (v2.5 Geliştirilmiş Sürüm)
+    - Dairesel Slider (Knob) Mekanizması Tamamen Yenilendi
+    - Neon Efektleri ve Yumuşak Geçişler Eklendi
+    - CoreGui ve GetHui Hataları Giderildi
+]]
+
+local Quantum = {}
+Quantum.__index = Quantum
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local Theme = {
+    Main = Color3.fromRGB(12, 12, 14),
+    Accent = Color3.fromRGB(0, 255, 120),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(180, 180, 180),
+    Outline = Color3.fromRGB(45, 45, 50),
+    Transparency = 0.1
+}
+
+local function Tween(obj, time, prop)
+    TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), prop):Play()
+end
+
+local function GetGuiParent()
+    local success, parent = pcall(function()
+        return (gethui and gethui()) or (CoreGui:FindFirstChild("RobloxGui")) or Players.LocalPlayer:WaitForChild("PlayerGui")
+    end)
+    return success and parent or Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Screen = Instance.new("ScreenGui", GetGuiParent())
+    self.Screen.Name = "Quantum_Gelistirilmis"
+    self.Toggled = true
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+
+    -- Ana Panel
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 680, 0, 480)
+    self.Main.Position = UDim2.new(0.5, -340, 0.5, -240)
+    self.Main.BackgroundColor3 = Theme.Main
+    self.Main.BackgroundTransparency = Theme.Transparency
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 12)
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Theme.Outline; Stroke.Thickness = 1.5
+
+    -- Başlık ve Navigasyon (SideBar)
+    local SideBar = Instance.new("ScrollingFrame", self.Main)
+    SideBar.Size = UDim2.new(0, 170, 1, -100); SideBar.Position = UDim2.new(0, 15, 0, 60); SideBar.BackgroundTransparency = 1; SideBar.ScrollBarThickness = 0
+    Instance.new("UIListLayout", SideBar).Padding = UDim.new(0, 8)
+
+    self.PageHold = Instance.new("Frame", self.Main)
+    self.PageHold.Size = UDim2.new(1, -210, 1, -80); self.PageHold.Position = UDim2.new(0, 190, 0, 60); self.PageHold.BackgroundTransparency = 1
+
+    function self:CreateTab(name)
+        local Tab = {}
+        local TBtn = Instance.new("TextButton", SideBar)
+        TBtn.Size = UDim2.new(1, 0, 0, 40); TBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 30); TBtn.Text = name; TBtn.TextColor3 = Theme.SubText; TBtn.Font = Enum.Font.GothamBold; TBtn.TextSize = 13
+        Instance.new("UICorner", TBtn).CornerRadius = UDim.new(0, 8)
+
+        local Page = Instance.new("ScrollingFrame", self.PageHold)
+        Page.Size = UDim2.new(1, 0, 1, 0); Page.Visible = false; Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 12)
+
+        TBtn.MouseButton1Click:Connect(function()
+            for _, v in pairs(self.PageHold:GetChildren()) do v.Visible = false end
+            Page.Visible = true
+            Tween(TBtn, 0.3, {TextColor3 = Theme.Accent})
+        end)
+        if #SideBar:GetChildren() == 1 then Page.Visible = true end
+
+        --// GELİŞTİRİLMİŞ DAİRESEL SLIDER (KNOB)
+        function Tab:CreateKnob(text, min, max, def, cb)
+            local KFrame = Instance.new("Frame", Page)
+            KFrame.Size = UDim2.new(1, -15, 0, 90); KFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25); KFrame.BackgroundTransparency = 0.5
+            Instance.new("UICorner", KFrame).CornerRadius = UDim.new(0, 10)
+            
+            local Title = Instance.new("TextLabel", KFrame)
+            Title.Size = UDim2.new(0.5, 0, 1, 0); Title.Position = UDim2.new(0, 15, 0, 0); Title.Text = text; Title.TextColor3 = Theme.Text; Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+
+            local KnobContainer = Instance.new("Frame", KFrame)
+            KnobContainer.Size = UDim2.new(0, 65, 0, 65); KnobContainer.Position = UDim2.new(1, -80, 0.5, -32); KnobContainer.BackgroundTransparency = 1
+
+            local Outer = Instance.new("ImageLabel", KnobContainer)
+            Outer.Size = UDim2.new(1, 0, 1, 0); Outer.Image = "rbxassetid://6031097225"; Outer.ImageColor3 = Theme.Outline; Outer.BackgroundTransparency = 1
+
+            local Tracker = Instance.new("ImageLabel", KnobContainer)
+            Tracker.Size = UDim2.new(1, 0, 1, 0); Tracker.Image = "rbxassetid://6031097225"; Tracker.ImageColor3 = Theme.Accent; Tracker.BackgroundTransparency = 1; Tracker.ZIndex = 2
+
+            local ValDisplay = Instance.new("TextLabel", KnobContainer)
+            ValDisplay.Size = UDim2.new(1, 0, 1, 0); ValDisplay.Text = tostring(def); ValDisplay.TextColor3 = Theme.Accent; ValDisplay.Font = Enum.Font.GothamBold; ValDisplay.TextSize = 12; ValDisplay.BackgroundTransparency = 1; ValDisplay.ZIndex = 3
+
+            local dragging = false
+            local function UpdateKnob()
+                local mouse = UserInputService:GetMouseLocation()
+                local center = Tracker.AbsolutePosition + (Tracker.AbsoluteSize / 2)
+                local dist = mouse - center
+                local angle = math.atan2(dist.Y, dist.X)
+                local deg = math.deg(angle) + 90
+                if deg < 0 then deg = deg + 360 end
+                
+                Tracker.Rotation = deg
+                local percent = deg / 360
+                local val = math.floor(min + (max - min) * percent)
+                
+                ValDisplay.Text = tostring(val)
+                cb(val)
+            end
+
+            KnobContainer.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    dragging = true
+                    while dragging do
+                        UpdateKnob()
+                        RunService.RenderStepped:Wait()
+                    end
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+            end)
+
+            -- Başlangıç Pozisyonu Ayarı
+            local initDeg = ((def - min) / (max - min)) * 360
+            Tracker.Rotation = initDeg
+        end
+
+        function Tab:CreateButton(txt, cb)
+            local b = Instance.new("TextButton", Page)
+            b.Size = UDim2.new(1, -15, 0, 42); b.BackgroundColor3 = Color3.fromRGB(30, 30, 35); b.Text = txt; b.TextColor3 = Theme.Text; b.Font = Enum.Font.GothamMedium; b.TextSize = 14
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+            b.MouseButton1Click:Connect(cb)
+        end
+
+        return Tab
+    end
+    return self
+end
+
+return Quantum
