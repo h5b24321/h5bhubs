@@ -1,0 +1,194 @@
+--[[
+    QUANTUM.NZ UI - BOTTOM NAV EDITION
+    Developed by: CostyTR
+    Design: Glassmorphism / Bottom Tab Navigation
+    Animations: Zoom & Blur Fade
+]]
+
+local Quantum = {}
+Quantum.__index = Quantum
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+
+local Theme = {
+    Main = Color3.fromRGB(15, 15, 18),
+    Accent = Color3.fromRGB(0, 255, 130),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(180, 180, 180),
+    Outline = Color3.fromRGB(255, 255, 255),
+    Transparency = 0.2
+}
+
+local function SmoothTween(obj, time, prop)
+    local info = TweenInfo.new(time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local t = TweenService:Create(obj, info, prop)
+    t:Play()
+    return t
+end
+
+--// Notification (Top Center)
+function Quantum:Notify(title, text, duration)
+    local NotifyFrame = Instance.new("Frame", self.Screen)
+    NotifyFrame.Size = UDim2.new(0, 300, 0, 65)
+    NotifyFrame.Position = UDim2.new(0.5, -150, 0, -100)
+    NotifyFrame.BackgroundColor3 = Theme.Main
+    NotifyFrame.BackgroundTransparency = 0.1
+    Instance.new("UICorner", NotifyFrame).CornerRadius = UDim.new(0, 10)
+    Instance.new("UIStroke", NotifyFrame).Color = Theme.Accent
+
+    local T = Instance.new("TextLabel", NotifyFrame)
+    T.Size = UDim2.new(1, 0, 0, 30); T.Text = title .. " | CostyTR"; T.TextColor3 = Theme.Accent; T.Font = Enum.Font.GothamBold; T.TextSize = 14; T.BackgroundTransparency = 1
+
+    local D = Instance.new("TextLabel", NotifyFrame)
+    D.Size = UDim2.new(1, 0, 0, 30); D.Position = UDim2.new(0, 0, 0, 25); D.Text = text; D.TextColor3 = Theme.Text; D.Font = Enum.Font.Gotham; D.TextSize = 12; D.BackgroundTransparency = 1
+
+    SmoothTween(NotifyFrame, 0.6, {Position = UDim2.new(0.5, -150, 0, 50)})
+    task.delay(duration or 3, function()
+        SmoothTween(NotifyFrame, 0.6, {Position = UDim2.new(0.5, -150, 0, -100)})
+        task.wait(0.6); NotifyFrame:Destroy()
+    end)
+end
+
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Title = cfg.Title or "CostyTR Hub"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+    self.Toggled = true
+    
+    self.Screen = Instance.new("ScreenGui")
+    self.Screen.Name = "QuantumBottom_Costy"
+    self.Screen.Parent = (gethui and gethui()) or CoreGui
+    self.Screen.IgnoreGuiInset = true
+
+    --// Intro: Quantum.nz (Zorunlu)
+    local function StartIntro()
+        local Logo = Instance.new("TextLabel", self.Screen)
+        Logo.Size = UDim2.new(1,0,1,0); Logo.Text = "Quantum.nz"; Logo.TextColor3 = Theme.Accent; Logo.Font = Enum.Font.GothamBold; Logo.TextSize = 100; Logo.BackgroundTransparency = 1; Logo.TextTransparency = 1
+        SmoothTween(Logo, 1, {TextTransparency = 0})
+        task.wait(2); SmoothTween(Logo, 1, {TextTransparency = 1, TextSize = 150})
+        task.wait(1); Logo:Destroy()
+    end
+
+    --// Main Frame
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 600, 0, 420)
+    self.Main.Position = UDim2.new(0.5, -300, 0.5, -210)
+    self.Main.BackgroundColor3 = Theme.Main
+    self.Main.BackgroundTransparency = Theme.Transparency
+    self.Main.ClipsDescendants = true
+    self.Main.Visible = false
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 20)
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Theme.Outline; Stroke.Transparency = 0.8
+
+    -- Top Bar (Branding)
+    local TopBar = Instance.new("Frame", self.Main)
+    TopBar.Size = UDim2.new(1, 0, 0, 50); TopBar.BackgroundTransparency = 1
+    
+    local Branding = Instance.new("TextLabel", TopBar)
+    Branding.Size = UDim2.new(1, -40, 1, 0); Branding.Position = UDim2.new(0, 20, 0, 0)
+    Branding.Text = "MADE BY COSTYTR"; Branding.TextColor3 = Theme.SubText; Branding.Font = Enum.Font.GothamBold; Branding.TextSize = 12; Branding.BackgroundTransparency = 1; Branding.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- MacOS Dots (Top Right)
+    local DotHold = Instance.new("Frame", TopBar)
+    DotHold.Size = UDim2.new(0, 70, 1, 0); DotHold.Position = UDim2.new(1, -85, 0, 0); DotHold.BackgroundTransparency = 1
+    local function CreateDot(color, pos, func)
+        local d = Instance.new("TextButton", DotHold)
+        d.Size = UDim2.new(0, 12, 0, 12); d.Position = pos; d.BackgroundColor3 = color; d.Text = ""; Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+        d.MouseButton1Click:Connect(func)
+    end
+    CreateDot(Color3.fromRGB(255, 95, 87), UDim2.new(0, 44, 0.5, -6), function() self:Toggle() end)
+
+    -- Bottom Nav (Tablar Altta)
+    local BottomNav = Instance.new("Frame", self.Main)
+    BottomNav.Size = UDim2.new(1, -40, 0, 50); BottomNav.Position = UDim2.new(0, 20, 1, -65); BottomNav.BackgroundColor3 = Color3.fromRGB(255,255,255); BottomNav.BackgroundTransparency = 0.96
+    Instance.new("UICorner", BottomNav).CornerRadius = UDim.new(0, 12)
+    local NavList = Instance.new("UIListLayout", BottomNav); NavList.FillDirection = Enum.FillDirection.Horizontal; NavList.HorizontalAlignment = Enum.HorizontalAlignment.Center; NavList.VerticalAlignment = Enum.VerticalAlignment.Center; NavList.Padding = UDim.new(0, 15)
+
+    -- Container for Pages
+    local PageHold = Instance.new("Frame", self.Main)
+    PageHold.Size = UDim2.new(1, -40, 1, -135); PageHold.Position = UDim2.new(0, 20, 0, 60); PageHold.BackgroundTransparency = 1
+
+    -- Drag & Resize (Latex Style)
+    local dragging, dragStart, startPos
+    TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=true; dragStart=i.Position; startPos=self.Main.Position end end)
+    local resizing, resStart, resSize
+    local Resizer = Instance.new("Frame", self.Main); Resizer.Size = UDim2.new(0, 20, 0, 20); Resizer.Position = UDim2.new(1, -20, 1, -20); Resizer.BackgroundTransparency = 1
+    Resizer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then resizing=true; resStart=i.Position; resSize=self.Main.Size end end)
+
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            self.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        elseif resizing and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - resStart
+            self.Main.Size = UDim2.new(0, math.max(500, resSize.X.Offset + delta.X), 0, math.max(350, resSize.Y.Offset + delta.Y))
+        end
+    end)
+    UserInputService.InputEnded:Connect(function() dragging=false; resizing=false end)
+
+    --// NEW ANIMATION: Zoom & Fade
+    function self:Toggle()
+        self.Toggled = not self.Toggled
+        if self.Toggled then
+            self.Main.Visible = true
+            self.Main.ClipsDescendants = false
+            SmoothTween(self.Main, 0.5, {Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = Theme.Transparency})
+            SmoothTween(Stroke, 0.5, {Transparency = 0.8})
+        else
+            SmoothTween(self.Main, 0.5, {Size = UDim2.new(0, 550, 0, 380), BackgroundTransparency = 1})
+            SmoothTween(Stroke, 0.5, {Transparency = 1})
+            task.wait(0.5); self.Main.Visible = false
+        end
+    end
+    UserInputService.InputBegan:Connect(function(i, p) if not p and i.KeyCode == self.Keybind then self:Toggle() end end)
+
+    task.spawn(function() 
+        StartIntro() 
+        self.Main.Visible = true
+        self.Main.Size = UDim2.new(0, 500, 0, 350); self.Main.BackgroundTransparency = 1
+        SmoothTween(self.Main, 0.8, {Size = UDim2.new(0, 600, 0, 420), BackgroundTransparency = Theme.Transparency})
+    end)
+
+    function self:CreateTab(name)
+        local Tab = {}
+        local TBtn = Instance.new("TextButton", BottomNav)
+        TBtn.Size = UDim2.new(0, 100, 0, 35); TBtn.BackgroundTransparency = 1; TBtn.Text = name; TBtn.TextColor3 = Theme.SubText; TBtn.Font = Enum.Font.GothamBold; TBtn.TextSize = 12
+        
+        local Page = Instance.new("ScrollingFrame", PageHold)
+        Page.Size = UDim2.new(1, 0, 1, 0); Page.Visible = false; Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 0
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 10)
+
+        TBtn.MouseButton1Click:Connect(function()
+            for _, v in pairs(PageHold:GetChildren()) do v.Visible = false end
+            for _, v in pairs(BottomNav:GetChildren()) do if v:IsA("TextButton") then SmoothTween(v, 0.3, {TextColor3 = Theme.SubText}) end end
+            Page.Visible = true
+            SmoothTween(TBtn, 0.3, {TextColor3 = Theme.Accent})
+        end)
+        if #BottomNav:GetChildren() == 2 then Page.Visible = true; TBtn.TextColor3 = Theme.Accent end
+
+        function Tab:CreateButton(txt, cb)
+            local b = Instance.new("TextButton", Page)
+            b.Size = UDim2.new(1, 0, 0, 45); b.BackgroundColor3 = Color3.fromRGB(255,255,255); b.BackgroundTransparency = 0.97; b.Text = txt .. " | CostyTR"; b.TextColor3 = Theme.Text; b.Font = Enum.Font.GothamMedium; b.TextSize = 13
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+            b.MouseButton1Click:Connect(cb)
+        end
+
+        function Tab:CreateToggle(txt, def, cb)
+            local state = def
+            local t = Instance.new("TextButton", Page)
+            t.Size = UDim2.new(1, 0, 0, 45); t.BackgroundColor3 = Color3.fromRGB(255,255,255); t.BackgroundTransparency = 0.97; t.Text = "  " .. txt; t.TextColor3 = Theme.Text; t.Font = Enum.Font.GothamMedium; t.TextSize = 13; t.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", t).CornerRadius = UDim.new(0, 10)
+            local box = Instance.new("Frame", t); box.Size = UDim2.new(0, 35, 0, 18); box.Position = UDim2.new(1, -45, 0.5, -9); box.BackgroundColor3 = state and Theme.Accent or Color3.fromRGB(60,60,60); Instance.new("UICorner", box).CornerRadius = UDim.new(1,0)
+            t.MouseButton1Click:Connect(function() state = not state; SmoothTween(box, 0.3, {BackgroundColor3 = state and Theme.Accent or Color3.fromRGB(60,60,60)}); cb(state) end)
+        end
+
+        return Tab
+    end
+    return self
+end
+
+return Quantum
