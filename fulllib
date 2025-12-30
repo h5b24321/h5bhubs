@@ -191,41 +191,83 @@ function Quantum:CreateWindow(cfg)
             b.MouseButton1Click:Connect(cb)
         end
 
-        -- Element: Radio Knob (Circular Style)
-        function Tab:CreateKnob(text, min, max, def, cb)
-            local KFrame = Instance.new("Frame", Page)
-            KFrame.Size = UDim2.new(1, -12, 0, 100); KFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22); KFrame.BackgroundTransparency = 0.4
-            Instance.new("UICorner", KFrame).CornerRadius = UDim.new(0, 10)
+-- Element: Radio Knob (FIXED - CoreGui Safe)
+function Tab:CreateKnob(text, min, max, def, cb)
+    local KFrame = Instance.new("Frame", Page)
+    KFrame.Size = UDim2.new(1, -12, 0, 100)
+    KFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    KFrame.BackgroundTransparency = 0.4
+    Instance.new("UICorner", KFrame).CornerRadius = UDim.new(0, 10)
 
-            local KT = Instance.new("TextLabel", KFrame)
-            KT.Size = UDim2.new(0.6, 0, 1, 0); KT.Position = UDim2.new(0, 15, 0, 0); KT.Text = text; KT.TextColor3 = Theme.Text; KT.Font = Enum.Font.GothamBold; KT.BackgroundTransparency = 1; KT.TextXAlignment = Enum.TextXAlignment.Left
+    local KT = Instance.new("TextLabel", KFrame)
+    KT.Size = UDim2.new(0.6, 0, 1, 0)
+    KT.Position = UDim2.new(0, 15, 0, 0)
+    KT.Text = text
+    KT.TextColor3 = Theme.Text
+    KT.Font = Enum.Font.GothamBold
+    KT.BackgroundTransparency = 1
+    KT.TextXAlignment = Enum.TextXAlignment.Left
 
-            local Outer = Instance.new("ImageLabel", KFrame)
-            Outer.Size = UDim2.new(0, 70, 0, 70); Outer.Position = UDim2.new(0.8, 0, 0.5, -35); Outer.Image = "rbxassetid://6031097063"; Outer.BackgroundTransparency = 1; Outer.ImageColor3 = Theme.Accent
+    local Outer = Instance.new("ImageButton", KFrame)
+    Outer.Size = UDim2.new(0, 70, 0, 70)
+    Outer.Position = UDim2.new(0.8, 0, 0.5, -35)
+    Outer.Image = "rbxassetid://6031097063"
+    Outer.BackgroundTransparency = 1
+    Outer.ImageColor3 = Theme.Accent
+    Outer.AutoButtonColor = false
 
-            local ValLbl = Instance.new("TextLabel", Outer)
-            ValLbl.Size = UDim2.new(1, 0, 1, 0); ValLbl.Text = tostring(def); ValLbl.TextColor3 = Theme.Text; ValLbl.Font = Enum.Font.GothamBold; ValLbl.BackgroundTransparency = 1; ValLbl.TextSize = 11
+    local ValLbl = Instance.new("TextLabel", Outer)
+    ValLbl.Size = UDim2.new(1, 0, 1, 0)
+    ValLbl.Text = tostring(def)
+    ValLbl.TextColor3 = Theme.Text
+    ValLbl.Font = Enum.Font.GothamBold
+    ValLbl.BackgroundTransparency = 1
+    ValLbl.TextSize = 11
 
-            local function Update(input)
-                local center = Outer.AbsolutePosition + (Outer.AbsoluteSize / 2)
-                local angle = math.atan2(input.Position.Y - center.Y, input.Position.X - center.X)
-                local deg = math.deg(angle) + 90
-                Outer.Rotation = deg
-                local percent = (deg % 360) / 360
-                local finalVal = math.floor(min + (max - min) * percent)
-                ValLbl.Text = tostring(finalVal)
-                cb(finalVal)
-            end
+    local dragging = false
+    local GuiInset = game:GetService("GuiService"):GetGuiInset()
 
-            Outer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then 
-                local conn; conn = RunService.RenderStepped:Connect(function() Update(UserInputService:GetMouseLocation()) end)
-                UserInputService.InputEnded:Connect(function(i2) if i2.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() end end)
-            end end)
-        end
+    local function UpdateFromMouse()
+        local mousePos = UserInputService:GetMouseLocation() - Vector2.new(GuiInset.X, GuiInset.Y)
+        local center = Outer.AbsolutePosition + (Outer.AbsoluteSize / 2)
 
-        return Tab
+        local angle = math.atan2(mousePos.Y - center.Y, mousePos.X - center.X)
+        local deg = math.deg(angle) + 90
+        deg = (deg + 360) % 360
+
+        Outer.Rotation = deg
+
+        local percent = math.clamp(deg / 360, 0, 1)
+        local value = math.floor(min + (max - min) * percent)
+
+        ValLbl.Text = tostring(value)
+        cb(value)
     end
-    return self
+
+    Outer.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            UpdateFromMouse()
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            UpdateFromMouse()
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    return Tab
+end
+
+return self
 end
 
 return Quantum
+
