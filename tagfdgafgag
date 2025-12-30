@@ -1,0 +1,239 @@
+--[[
+    QUANTUM.NZ UI - GLASS EDITION (ULTRA SMOOTH)
+    Branded by: CostyTR
+    Features: Acrylic Glass, Smooth Animations, Theme Engine, MacOS Aesthetic
+]]
+
+local Quantum = {}
+Quantum.__index = Quantum
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+--// Ultra Smooth Theme Engine
+local Themes = {
+    Dark = {
+        Main = Color3.fromRGB(15, 15, 15),
+        Accent = Color3.fromRGB(0, 255, 150),
+        Transparency = 0.25,
+        Blur = 15
+    },
+    Aqua = {
+        Main = Color3.fromRGB(10, 25, 35),
+        Accent = Color3.fromRGB(0, 180, 255),
+        Transparency = 0.3,
+        Blur = 20
+    },
+    Glass = {
+        Main = Color3.fromRGB(0, 0, 0),
+        Accent = Color3.fromRGB(255, 255, 255),
+        Transparency = 0.5,
+        Blur = 30
+    }
+}
+
+local CurrentTheme = Themes.Dark
+
+local function EasyTween(obj, time, prop)
+    local info = TweenInfo.new(time, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
+    local t = TweenService:Create(obj, info, prop)
+    t:Play()
+    return t
+end
+
+--// Notification System (Glass Style)
+function Quantum:Notify(title, text, duration)
+    local NotifyFrame = Instance.new("Frame", self.Screen)
+    NotifyFrame.Size = UDim2.new(0, 280, 0, 80)
+    NotifyFrame.Position = UDim2.new(1, 20, 1, -100)
+    NotifyFrame.BackgroundColor3 = CurrentTheme.Main
+    NotifyFrame.BackgroundTransparency = 0.2
+    Instance.new("UICorner", NotifyFrame).CornerRadius = UDim.new(0, 12)
+    Instance.new("UIStroke", NotifyFrame).Color = CurrentTheme.Accent
+    
+    local T = Instance.new("TextLabel", NotifyFrame)
+    T.Size = UDim2.new(1, -20, 0, 30); T.Position = UDim2.new(0, 15, 0, 5)
+    T.Text = title .. " | CostyTR"; T.TextColor3 = CurrentTheme.Accent; T.Font = Enum.Font.GothamBold; T.TextSize = 14; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left
+
+    local D = Instance.new("TextLabel", NotifyFrame)
+    D.Size = UDim2.new(1, -20, 0, 35); D.Position = UDim2.new(0, 15, 0, 35)
+    D.Text = text; D.TextColor3 = Color3.fromRGB(230,230,230); D.Font = Enum.Font.Gotham; D.TextSize = 12; D.BackgroundTransparency = 1; D.TextXAlignment = Enum.TextXAlignment.Left; D.TextWrapped = true
+
+    EasyTween(NotifyFrame, 0.7, {Position = UDim2.new(1, -300, 1, -100)})
+    task.delay(duration or 4, function()
+        EasyTween(NotifyFrame, 0.6, {Position = UDim2.new(1, 20, 1, -100)})
+        task.wait(0.6); NotifyFrame:Destroy()
+    end)
+end
+
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Title = cfg.Title or "CostyTR Hub"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+    self.Toggled = true
+    
+    self.Screen = Instance.new("ScreenGui")
+    self.Screen.Name = "QuantumGlass_Costy"
+    self.Screen.Parent = (gethui and gethui()) or CoreGui
+    self.Screen.IgnoreGuiInset = true
+
+    --// Intro: Quantum.nz (Zorunlu)
+    local function StartIntro()
+        local Blur = Instance.new("BlurEffect", Lighting)
+        local Logo = Instance.new("TextLabel", self.Screen)
+        Logo.Size = UDim2.new(1,0,1,0); Logo.Text = "Quantum.nz"; Logo.TextColor3 = CurrentTheme.Accent; Logo.Font = Enum.Font.GothamBold; Logo.TextSize = 90; Logo.BackgroundTransparency = 1; Logo.TextTransparency = 1
+        
+        EasyTween(Blur, 1, {Size = 30}); EasyTween(Logo, 1, {TextTransparency = 0})
+        task.wait(2.2); EasyTween(Logo, 0.8, {TextTransparency = 1, TextSize = 140}); EasyTween(Blur, 1, {Size = 0})
+        task.wait(1); Blur:Destroy(); Logo:Destroy()
+    end
+
+    --// Main Window (Dinamik Cam Efekti)
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 700, 0, 500)
+    self.Main.Position = UDim2.new(0.5, -350, 0.5, -250)
+    self.Main.BackgroundColor3 = CurrentTheme.Main
+    self.Main.BackgroundTransparency = CurrentTheme.Transparency
+    self.Main.ClipsDescendants = true
+    self.Main.Visible = false
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 16)
+    
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Color3.fromRGB(60, 60, 65); Stroke.Thickness = 1.5; Stroke.Transparency = 0.5
+
+    -- Sürükleme ve Büyütme (Latex/MacOS Style)
+    local TopBar = Instance.new("Frame", self.Main)
+    TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 1
+
+    local dragging, dragStart, startPos
+    TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=true; dragStart=i.Position; startPos=self.Main.Position end end)
+    
+    local resizing, resStart, resSize
+    local Resizer = Instance.new("Frame", self.Main)
+    Resizer.Size = UDim2.new(0, 25, 0, 25); Resizer.Position = UDim2.new(1, -25, 1, -25); Resizer.BackgroundTransparency = 1; Resizer.ZIndex = 100
+    Resizer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then resizing=true; resStart=i.Position; resSize=self.Main.Size end end)
+
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            self.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        elseif resizing and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - resStart
+            self.Main.Size = UDim2.new(0, math.max(500, resSize.X.Offset + delta.X), 0, math.max(350, resSize.Y.Offset + delta.Y))
+        end
+    end)
+    UserInputService.InputEnded:Connect(function() dragging=false; resizing=false end)
+
+    -- MacOS Butonlar
+    local function CreateMac(color, pos, func)
+        local b = Instance.new("TextButton", TopBar)
+        b.Size = UDim2.new(0, 14, 0, 14); b.Position = pos; b.BackgroundColor3 = color; b.Text = ""
+        Instance.new("UICorner", b).CornerRadius = UDim.new(1, 0)
+        b.MouseButton1Click:Connect(func)
+    end
+    CreateMac(Color3.fromRGB(255, 95, 87), UDim2.new(0, 20, 0.5, -7), function() self:Toggle() end)
+    CreateMac(Color3.fromRGB(255, 189, 46), UDim2.new(0, 42, 0.5, -7), function() self:Notify("CostyTR", "Menü Küçültüldü!", 2) end)
+    CreateMac(Color3.fromRGB(40, 200, 64), UDim2.new(0, 64, 0.5, -7), function() EasyTween(self.Main, 0.5, {Size = UDim2.new(0, 900, 0, 600)}) end)
+
+    local Title = Instance.new("TextLabel", TopBar)
+    Title.Size = UDim2.new(1, -150, 1, 0); Title.Position = UDim2.new(0, 100, 0, 0)
+    Title.Text = self.Title .. " | Made by CostyTR"; Title.TextColor3 = Color3.fromRGB(200,200,200); Title.Font = Enum.Font.GothamBold; Title.TextSize = 14; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- SideBar & Page System
+    local SideBar = Instance.new("ScrollingFrame", self.Main)
+    SideBar.Size = UDim2.new(0, 180, 1, -110); SideBar.Position = UDim2.new(0, 15, 0, 70); SideBar.BackgroundTransparency = 1; SideBar.ScrollBarThickness = 0
+    Instance.new("UIListLayout", SideBar).Padding = UDim.new(0, 8)
+
+    local PageHold = Instance.new("Frame", self.Main)
+    PageHold.Size = UDim2.new(1, -220, 1, -110); PageHold.Position = UDim2.new(0, 205, 0, 70); PageHold.BackgroundTransparency = 1
+
+    local Footer = Instance.new("TextLabel", self.Main)
+    Footer.Size = UDim2.new(1, -20, 0, 30); Footer.Position = UDim2.new(0, 10, 1, -35)
+    Footer.Text = "Quantum v4 Glass - Developed by CostyTR"; Footer.TextColor3 = CurrentTheme.Accent; Footer.Font = Enum.Font.GothamMedium; Footer.TextSize = 11; Footer.BackgroundTransparency = 1; Footer.TextXAlignment = Enum.TextXAlignment.Right
+
+    --// Toggle Function
+    function self:Toggle()
+        self.Toggled = not self.Toggled
+        if self.Toggled then
+            self.Main.Visible = true
+            EasyTween(self.Main, 0.6, {Size = UDim2.new(0, 700, 0, 500), BackgroundTransparency = CurrentTheme.Transparency})
+        else
+            EasyTween(self.Main, 0.6, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1})
+            task.wait(0.6); self.Main.Visible = false
+        end
+    end
+    UserInputService.InputBegan:Connect(function(i, p) if not p and i.KeyCode == self.Keybind then self:Toggle() end end)
+
+    task.spawn(function() StartIntro(); self.Main.Visible = true; EasyTween(self.Main, 0.8, {Size = UDim2.new(0, 700, 0, 500)}) end)
+
+    function self:CreateTab(name)
+        local Tab = {}
+        local TBtn = Instance.new("TextButton", SideBar)
+        TBtn.Size = UDim2.new(1, 0, 0, 42); TBtn.BackgroundColor3 = Color3.fromRGB(255,255,255); TBtn.BackgroundTransparency = 0.95; TBtn.Text = name; TBtn.TextColor3 = Color3.fromRGB(180,180,180); TBtn.Font = Enum.Font.GothamBold; TBtn.TextSize = 13
+        Instance.new("UICorner", TBtn).CornerRadius = UDim.new(0, 10)
+
+        local Page = Instance.new("ScrollingFrame", PageHold)
+        Page.Size = UDim2.new(1, 0, 1, 0); Page.Visible = false; Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2; Page.ScrollBarImageColor3 = CurrentTheme.Accent
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 12)
+
+        TBtn.MouseButton1Click:Connect(function()
+            for _, v in pairs(PageHold:GetChildren()) do v.Visible = false end
+            Page.Visible = true
+            EasyTween(TBtn, 0.3, {BackgroundTransparency = 0.85, TextColor3 = Color3.fromRGB(255,255,255)})
+        end)
+        if #SideBar:GetChildren() == 1 then Page.Visible = true end
+
+        -- Element: Button (Smooth Glass)
+        function Tab:CreateButton(txt, cb)
+            local b = Instance.new("TextButton", Page)
+            b.Size = UDim2.new(1, -15, 0, 48); b.BackgroundColor3 = Color3.fromRGB(255,255,255); b.BackgroundTransparency = 0.96; b.Text = "  " .. txt .. " | CostyTR"; b.TextColor3 = Color3.fromRGB(240,240,240); b.Font = Enum.Font.GothamMedium; b.TextSize = 14; b.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+            Instance.new("UIStroke", b).Color = Color3.fromRGB(255,255,255); b.UIStroke.Transparency = 0.9
+            
+            b.MouseEnter:Connect(function() EasyTween(b, 0.3, {BackgroundTransparency = 0.9, TextColor3 = CurrentTheme.Accent}) end)
+            b.MouseLeave:Connect(function() EasyTween(b, 0.3, {BackgroundTransparency = 0.96, TextColor3 = Color3.fromRGB(240,240,240)}) end)
+            b.MouseButton1Click:Connect(cb)
+        end
+
+        -- Element: Toggle (Modern Switch)
+        function Tab:CreateToggle(txt, def, cb)
+            local state = def
+            local t = Instance.new("TextButton", Page)
+            t.Size = UDim2.new(1, -15, 0, 48); t.BackgroundColor3 = Color3.fromRGB(255,255,255); t.BackgroundTransparency = 0.96; t.Text = "  " .. txt; t.TextColor3 = Color3.fromRGB(240,240,240); t.Font = Enum.Font.GothamMedium; t.TextSize = 14; t.TextXAlignment = Enum.TextXAlignment.Left
+            Instance.new("UICorner", t).CornerRadius = UDim.new(0, 10)
+
+            local box = Instance.new("Frame", t)
+            box.Size = UDim2.new(0, 42, 0, 22); box.Position = UDim2.new(1, -55, 0.5, -11); box.BackgroundColor3 = state and CurrentTheme.Accent or Color3.fromRGB(50,50,50)
+            Instance.new("UICorner", box).CornerRadius = UDim.new(1, 0)
+            
+            local dot = Instance.new("Frame", box)
+            dot.Size = UDim2.new(0, 16, 0, 16); dot.Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8); dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+            Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+            t.MouseButton1Click:Connect(function()
+                state = not state
+                EasyTween(box, 0.3, {BackgroundColor3 = state and CurrentTheme.Accent or Color3.fromRGB(50,50,50)})
+                EasyTween(dot, 0.3, {Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)})
+                cb(state)
+            end)
+        end
+
+        return Tab
+    end
+    
+    --// Theme Selector (Kütüphaneye Dahili)
+    function self:SetTheme(themeName)
+        if Themes[themeName] then
+            CurrentTheme = Themes[themeName]
+            EasyTween(self.Main, 0.5, {BackgroundColor3 = CurrentTheme.Main, BackgroundTransparency = CurrentTheme.Transparency})
+            self:Notify("Tema", "Tema " .. themeName .. " olarak güncellendi!", 2)
+        end
+    end
+
+    return self
+end
+
+return Quantum
