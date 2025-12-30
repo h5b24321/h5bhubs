@@ -1,0 +1,255 @@
+--[[
+    QUANTUM V2 [VAMPIR EDITION]
+    Original Structure by Late
+    Modified & Enhanced by CostyTR
+]]
+
+local QuantumLib = {}
+QuantumLib.__index = QuantumLib
+
+--// Services
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
+
+--// Theme Settings
+local Theme = {
+    Primary = Color3.fromRGB(10, 10, 12),
+    Secondary = Color3.fromRGB(15, 15, 18),
+    Accent = Color3.fromRGB(126, 124, 245), -- Görseldeki mor vurgu
+    QuantumGreen = Color3.fromRGB(0, 255, 120),
+    Text = Color3.fromRGB(255, 255, 255),
+    SecondaryText = Color3.fromRGB(170, 170, 170),
+    MainTransparency = 0.2 -- İstediğin transparanlık
+}
+
+--// Utility Functions
+local function Protect(gui)
+    gui.Name = HttpService:GenerateGUID(false)
+    gui.Parent = CoreGui
+end
+
+local function Tween(obj, time, prop)
+    TweenService:Create(obj, TweenInfo.new(time, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), prop):Play()
+end
+
+local function Drag(frame)
+    local dragging, dragInput, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true; dragStart = input.Position; startPos = frame.Position
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+end
+
+function QuantumLib:CreateWindow(cfg)
+    local self = setmetatable({}, QuantumLib)
+    self.Title = cfg.Title or "Quantum Lib"
+    self.Owner = cfg.Owner or "User"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightShift
+    self.Visible = true
+
+    -- ScreenGui
+    self.Screen = Instance.new("ScreenGui")
+    Protect(self.Screen)
+
+    --// ÖZEL INTRO (BLURLU & VAMPIR YEŞİL)
+    task.spawn(function()
+        local Blur = Instance.new("BlurEffect", Lighting)
+        Blur.Size = 0
+        
+        local IntroFrame = Instance.new("Frame", self.Screen)
+        IntroFrame.Size = UDim2.new(1, 0, 1, 0)
+        IntroFrame.BackgroundTransparency = 1
+        IntroFrame.ZIndex = 9999
+
+        local MainText = Instance.new("TextLabel", IntroFrame)
+        MainText.Size = UDim2.new(1, 0, 1, 0)
+        MainText.BackgroundTransparency = 1
+        MainText.Text = "VAMPIR QUANTUM"
+        MainText.Font = Enum.Font.GothamBold
+        MainText.TextSize = 85
+        MainText.TextColor3 = Theme.QuantumGreen
+        MainText.TextTransparency = 1
+
+        local CreditText = Instance.new("TextLabel", IntroFrame)
+        CreditText.Size = UDim2.new(1, 0, 0, 50)
+        CreditText.Position = UDim2.new(0, 0, 0.6, 0)
+        CreditText.BackgroundTransparency = 1
+        CreditText.Text = "Made By CostyTR"
+        CreditText.Font = Enum.Font.GothamMedium
+        CreditText.TextSize = 25
+        CreditText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        CreditText.TextTransparency = 1
+
+        -- Intro Animasyonu
+        Tween(Blur, 0.8, {Size = 25})
+        task.wait(0.3)
+        Tween(MainText, 1, {TextTransparency = 0})
+        task.wait(0.4)
+        Tween(CreditText, 1, {TextTransparency = 0})
+        
+        task.wait(2.5)
+        
+        Tween(MainText, 0.8, {TextTransparency = 1})
+        Tween(CreditText, 0.8, {TextTransparency = 1})
+        Tween(Blur, 1, {Size = 0})
+        task.wait(1)
+        Blur:Destroy(); IntroFrame:Destroy()
+    end)
+
+    --// ANA PENCERE (TRANSPARAN SİYAH)
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 580, 0, 380)
+    self.Main.Position = UDim2.new(0.5, -290, 0.5, -190)
+    self.Main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    self.Main.BackgroundTransparency = Theme.MainTransparency
+    self.Main.BorderSizePixel = 0
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 12)
+    
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Color3.fromRGB(45, 45, 50)
+    Stroke.Thickness = 1.5
+
+    Drag(self.Main)
+
+    -- Sidebar
+    self.Sidebar = Instance.new("Frame", self.Main)
+    self.Sidebar.Size = UDim2.new(0, 160, 1, 0)
+    self.Sidebar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+    self.Sidebar.BackgroundTransparency = 0.3
+    Instance.new("UICorner", self.Sidebar).CornerRadius = UDim.new(0, 12)
+
+    local TitleLabel = Instance.new("TextLabel", self.Sidebar)
+    TitleLabel.Size = UDim2.new(1, 0, 0, 50)
+    TitleLabel.Text = self.Title
+    TitleLabel.TextColor3 = Theme.Accent
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 18
+    TitleLabel.BackgroundTransparency = 1
+
+    --// MADE BY FOOTER (ALTTAKİ İMZA)
+    local Footer = Instance.new("TextLabel", self.Sidebar)
+    Footer.Size = UDim2.new(1, 0, 0, 40)
+    Footer.Position = UDim2.new(0, 0, 1, -40)
+    Footer.BackgroundTransparency = 1
+    Footer.Text = "Made By CostyTR\n& " .. self.Owner
+    Footer.TextColor3 = Theme.SecondaryText
+    Footer.Font = Enum.Font.GothamSemibold
+    Footer.TextSize = 11
+
+    self.TabHolder = Instance.new("ScrollingFrame", self.Sidebar)
+    self.TabHolder.Size = UDim2.new(1, -10, 1, -100); self.TabHolder.Position = UDim2.new(0, 5, 0, 60)
+    self.TabHolder.BackgroundTransparency = 1; self.TabHolder.ScrollBarThickness = 0
+    local TabLayout = Instance.new("UIListLayout", self.TabHolder); TabLayout.Padding = UDim.new(0, 5)
+
+    self.PageHolder = Instance.new("Frame", self.Main)
+    self.PageHolder.Size = UDim2.new(1, -180, 1, -20); self.PageHolder.Position = UDim2.new(0, 170, 0, 10)
+    self.PageHolder.BackgroundTransparency = 1
+
+    -- Toggle Logic
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == self.Keybind then
+            self.Visible = not self.Visible
+            self.Main.Visible = self.Visible
+        end
+    end)
+
+    return self
+end
+
+function QuantumLib:CreateTab(name)
+    local Tab = {}
+    local TabBtn = Instance.new("TextButton", self.TabContainer or self.TabHolder)
+    TabBtn.Size = UDim2.new(1, 0, 0, 35); TabBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 25); TabBtn.BackgroundTransparency = 0.5
+    TabBtn.Text = name; TabBtn.TextColor3 = Theme.SecondaryText; TabBtn.Font = Enum.Font.GothamBold; TabBtn.TextSize = 14
+    Instance.new("UICorner", TabBtn)
+
+    local Page = Instance.new("ScrollingFrame", self.PageHolder)
+    Page.Size = UDim2.new(1, 0, 1, 0); Page.Visible = false; Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2
+    local PageLayout = Instance.new("UIListLayout", Page); PageLayout.Padding = UDim.new(0, 10)
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, v in pairs(self.PageHolder:GetChildren()) do v.Visible = false end
+        for _, v in pairs(self.TabHolder:GetChildren()) do if v:IsA("TextButton") then v.TextColor3 = Theme.SecondaryText end end
+        Page.Visible = true
+        TabBtn.TextColor3 = Theme.Accent
+    end)
+
+    --// COMPONENTS (BİLEŞENLER)
+
+    function Tab:CreateSection(txt)
+        local S = Instance.new("TextLabel", Page)
+        S.Size = UDim2.new(1, 0, 0, 25); S.Text = txt; S.TextColor3 = Theme.SecondaryText; S.Font = Enum.Font.GothamBold; S.TextSize = 13; S.BackgroundTransparency = 1; S.TextXAlignment = Enum.TextXAlignment.Left
+    end
+
+    function Tab:CreateParagraph(title, desc)
+        local P = Instance.new("Frame", Page)
+        P.Size = UDim2.new(1, -10, 0, 60); P.BackgroundColor3 = Color3.fromRGB(25, 25, 30); P.BackgroundTransparency = 0.4; Instance.new("UICorner", P)
+        local T = Instance.new("TextLabel", P); T.Size = UDim2.new(1, -20, 0, 25); T.Position = UDim2.new(0, 10, 0, 5); T.Text = title; T.TextColor3 = Theme.Text; T.Font = Enum.Font.GothamBold; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left
+        local D = Instance.new("TextLabel", P); D.Size = UDim2.new(1, -20, 0, 25); D.Position = UDim2.new(0, 10, 0, 30); D.Text = desc; D.TextColor3 = Theme.SecondaryText; D.Font = Enum.Font.Gotham; D.BackgroundTransparency = 1; D.TextXAlignment = Enum.TextXAlignment.Left
+    end
+
+    function Tab:CreateButton(txt, callback)
+        local B = Instance.new("TextButton", Page)
+        B.Size = UDim2.new(1, -10, 0, 40); B.BackgroundColor3 = Color3.fromRGB(30, 30, 38); B.BackgroundTransparency = 0.4; B.Text = "   " .. txt
+        B.TextColor3 = Theme.Text; B.Font = Enum.Font.GothamBold; B.TextXAlignment = Enum.TextXAlignment.Left; Instance.new("UICorner", B)
+        B.MouseButton1Click:Connect(callback)
+    end
+
+    function Tab:CreateToggle(txt, callback)
+        local Toggled = false
+        local B = Instance.new("TextButton", Page)
+        B.Size = UDim2.new(1, -10, 0, 40); B.BackgroundColor3 = Color3.fromRGB(30, 30, 38); B.BackgroundTransparency = 0.4; B.Text = "   " .. txt
+        B.TextColor3 = Theme.Text; B.Font = Enum.Font.GothamBold; B.TextXAlignment = Enum.TextXAlignment.Left; Instance.new("UICorner", B)
+        local Ind = Instance.new("Frame", B); Ind.Size = UDim2.new(0, 35, 0, 18); Ind.Position = UDim2.new(1, -45, 0.5, -9); Ind.BackgroundColor3 = Color3.fromRGB(50, 50, 50); Instance.new("UICorner", Ind).CornerRadius = UDim.new(1, 0)
+        local Dot = Instance.new("Frame", Ind); Dot.Size = UDim2.new(0, 14, 0, 14); Dot.Position = UDim2.new(0, 2, 0.5, -7); Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255); Instance.new("UICorner", Dot).CornerRadius = UDim.new(1, 0)
+        
+        B.MouseButton1Click:Connect(function()
+            Toggled = not Toggled
+            Tween(Ind, 0.3, {BackgroundColor3 = Toggled and Theme.Accent or Color3.fromRGB(50, 50, 50)})
+            Tween(Dot, 0.3, {Position = Toggled and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
+            callback(Toggled)
+        end)
+    end
+
+    function Tab:CreateSlider(txt, min, max, default, callback)
+        local S = Instance.new("Frame", Page)
+        S.Size = UDim2.new(1, -10, 0, 55); S.BackgroundColor3 = Color3.fromRGB(30, 30, 38); S.BackgroundTransparency = 0.4; Instance.new("UICorner", S)
+        local L = Instance.new("TextLabel", S); L.Size = UDim2.new(1, -20, 0, 25); L.Position = UDim2.new(0, 10, 0, 5); L.Text = txt .. ": " .. default; L.TextColor3 = Theme.Text; L.BackgroundTransparency = 1; L.TextXAlignment = Enum.TextXAlignment.Left
+        local Bar = Instance.new("Frame", S); Bar.Size = UDim2.new(1, -40, 0, 4); Bar.Position = UDim2.new(0, 20, 0, 40); Bar.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+        local Fill = Instance.new("Frame", Bar); Fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0); Fill.BackgroundColor3 = Theme.Accent
+        
+        Bar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local connection
+                connection = RunService.RenderStepped:Connect(function()
+                    local mousePos = UserInputService:GetMouseLocation().X - Bar.AbsolutePosition.X
+                    local percent = math.clamp(mousePos / Bar.AbsoluteSize.X, 0, 1)
+                    Fill.Size = UDim2.new(percent, 0, 1, 0)
+                    local value = math.floor(min + (max - min) * percent)
+                    L.Text = txt .. ": " .. value; callback(value)
+                end)
+                UserInputService.InputEnded:Connect(function(endInput)
+                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 then connection:Disconnect() end
+                end)
+            end
+        end)
+    end
+
+    return Tab
+end
+
+return QuantumLib
