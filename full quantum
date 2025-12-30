@@ -1,0 +1,194 @@
+--[[
+    QUANTUM.NZ PREMIUM UI
+    Re-Branded by: CostyTR
+    Version: MAX QUALITY
+]]
+
+local Quantum = {}
+Quantum.__index = Quantum
+
+--// Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+
+--// Theme Configuration
+local Theme = {
+    Main = Color3.fromRGB(8, 8, 8),
+    Accent = Color3.fromRGB(0, 255, 120),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(150, 150, 150),
+    Outline = Color3.fromRGB(35, 35, 40),
+    Transparency = 0.15 -- Ultra Glass Effect
+}
+
+--// Utils
+local function EasyTween(obj, time, prop, style)
+    local info = TweenInfo.new(time, style or Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(obj, info, prop)
+    tween:Play()
+    return tween
+end
+
+--// UI Logic
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Title = cfg.Title or "CostyTR Hub"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+    self.Toggled = true
+    
+    -- Main Gui
+    self.Screen = Instance.new("ScreenGui")
+    self.Screen.Name = "QuantumNZ_CostyTR"
+    self.Screen.Parent = (gethui and gethui()) or CoreGui
+    self.Screen.IgnoreGuiInset = true
+
+    --// 1. INTRO (Zorunlu Quantum.nz)
+    local function StartIntro()
+        local Blur = Instance.new("BlurEffect", Lighting)
+        Blur.Size = 0
+        
+        local IntroFrame = Instance.new("Frame", self.Screen)
+        IntroFrame.Size = UDim2.new(1, 0, 1, 0)
+        IntroFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        IntroFrame.BackgroundTransparency = 1
+        IntroFrame.ZIndex = 10000
+
+        local Logo = Instance.new("TextLabel", IntroFrame)
+        Logo.Size = UDim2.new(1, 0, 1, 0)
+        Logo.BackgroundTransparency = 1
+        Logo.Text = "Quantum.nz"
+        Logo.Font = Enum.Font.GothamBold
+        Logo.TextColor3 = Theme.Accent
+        Logo.TextSize = 60
+        Logo.TextTransparency = 1
+
+        EasyTween(Blur, 1.2, {Size = 25})
+        task.wait(0.2)
+        EasyTween(Logo, 1, {TextTransparency = 0, TextSize = 90})
+        task.wait(2.2)
+        EasyTween(Logo, 0.8, {TextTransparency = 1, TextSize = 130})
+        EasyTween(Blur, 1, {Size = 0})
+        task.wait(0.8)
+        Blur:Destroy(); IntroFrame:Destroy()
+    end
+
+    --// 2. MAIN WINDOW
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 650, 0, 420)
+    self.Main.Position = UDim2.new(0.5, -325, 0.5, -210)
+    self.Main.BackgroundColor3 = Theme.Main
+    self.Main.BackgroundTransparency = Theme.Transparency
+    self.Main.ClipsDescendants = true
+    self.Main.Visible = false
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 12)
+    
+    local Stroke = Instance.new("UIStroke", self.Main)
+    Stroke.Color = Theme.Outline
+    Stroke.Thickness = 1.5
+
+    -- MacOS TopBar
+    local TopBar = Instance.new("Frame", self.Main)
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.BackgroundTransparency = 1
+
+    local BtnContainer = Instance.new("Frame", TopBar)
+    BtnContainer.Size = UDim2.new(0, 70, 1, 0)
+    BtnContainer.Position = UDim2.new(0, 15, 0, 0)
+    BtnContainer.BackgroundTransparency = 1
+
+    local function CreateMacBtn(color, pos, func)
+        local btn = Instance.new("TextButton", BtnContainer)
+        btn.Size = UDim2.new(0, 13, 0, 13)
+        btn.Position = pos
+        btn.BackgroundColor3 = color
+        btn.Text = ""
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+        btn.MouseButton1Click:Connect(func)
+    end
+
+    -- Mac Actions (Kapatma/Küçültme Animasyonları)
+    CreateMacBtn(Color3.fromRGB(255, 95, 87), UDim2.new(0, 0, 0.5, -6), function() 
+        EasyTween(self.Main, 0.4, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, Enum.EasingStyle.Back)
+        task.wait(0.4)
+        self.Screen:Destroy() 
+    end)
+    CreateMacBtn(Color3.fromRGB(255, 189, 46), UDim2.new(0, 22, 0.5, -6), function() 
+        self:Toggle()
+    end)
+    CreateMacBtn(Color3.fromRGB(40, 200, 64), UDim2.new(0, 44, 0.5, -6), function() 
+        EasyTween(self.Main, 0.5, {Size = UDim2.new(0, 850, 0, 550)})
+    end)
+
+    -- Branding (Made by CostyTR)
+    local Branding = Instance.new("TextLabel", TopBar)
+    Branding.Size = UDim2.new(1, -100, 1, 0)
+    Branding.Position = UDim2.new(0, 85, 0, 0)
+    Branding.BackgroundTransparency = 1
+    Branding.Text = self.Title .. " | Made by CostyTR"
+    Branding.Font = Enum.Font.GothamBold
+    Branding.TextColor3 = Theme.SubText
+    Branding.TextSize = 13
+    Branding.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Footer = Instance.new("TextLabel", self.Main)
+    Footer.Size = UDim2.new(1, -20, 0, 25)
+    Footer.Position = UDim2.new(0, 10, 1, -30)
+    Footer.BackgroundTransparency = 1
+    Footer.Text = "Premium Scripting by CostyTR"
+    Footer.TextColor3 = Theme.Accent
+    Footer.Font = Enum.Font.GothamMedium
+    Footer.TextSize = 11
+    Footer.TextXAlignment = Enum.TextXAlignment.Right
+
+    -- Resizer & Draggable
+    local function MakeResizable(frame, minSize)
+        local resizer = Instance.new("Frame", frame)
+        resizer.Size = UDim2.new(0, 25, 0, 25)
+        resizer.Position = UDim2.new(1, -25, 1, -25)
+        resizer.BackgroundTransparency = 1
+        resizer.ZIndex = 100
+        local dragging, dragStart, startSize
+        resizer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=true; dragStart=i.Position; startSize=frame.Size end end)
+        UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType==Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            frame.Size = UDim2.new(0, math.max(minSize.X, startSize.X.Offset+delta.X), 0, math.max(minSize.Y, startSize.Y.Offset+delta.Y))
+        end end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=false end end)
+    end
+    MakeResizable(self.Main, Vector2.new(500, 350))
+
+    -- Toggle Function (Animated)
+    function self:Toggle()
+        self.Toggled = not self.Toggled
+        if self.Toggled then
+            self.Main.Visible = true
+            EasyTween(self.Main, 0.5, {Size = UDim2.new(0, 650, 0, 420), BackgroundTransparency = Theme.Transparency}, Enum.EasingStyle.Back)
+        else
+            EasyTween(self.Main, 0.5, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, Enum.EasingStyle.Back)
+            task.wait(0.5)
+            self.Main.Visible = false
+        end
+    end
+
+    UserInputService.InputBegan:Connect(function(i, p) if not p and i.KeyCode == self.Keybind then self:Toggle() end end)
+
+    -- Intro & Show
+    task.spawn(function()
+        StartIntro()
+        self.Main.Visible = true
+        self.Main.Size = UDim2.new(0, 0, 0, 0)
+        EasyTween(self.Main, 0.6, {Size = UDim2.new(0, 650, 0, 420)}, Enum.EasingStyle.Back)
+    end)
+
+    return self
+end
+
+--// TAB & COMPONENTS (Sadece CostyTR Reklamlı)
+function Quantum:CreateTab(name)
+    -- Tab logic here (Benzer yapı ile devam eder)
+    -- Tüm butonlara ve öğelere 'Made by CostyTR' tooltip'leri eklenebilir.
+end
+
+return Quantum
