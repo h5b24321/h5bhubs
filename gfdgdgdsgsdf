@@ -1,0 +1,206 @@
+local Quantum = {}
+Quantum.__index = Quantum
+
+--// Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+--// Theme Settings
+local Theme = {
+    Main = Color3.fromRGB(12, 12, 12),
+    Accent = Color3.fromRGB(0, 255, 120),
+    Text = Color3.fromRGB(255, 255, 255),
+    SubText = Color3.fromRGB(160, 160, 160),
+    Outline = Color3.fromRGB(40, 40, 45),
+    Transparency = 0.15
+}
+
+--// Helper: Smooth Tweens
+local function Tween(obj, time, prop, style)
+    local info = TweenInfo.new(time, style or Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(obj, info, prop)
+    tween:Play()
+    return tween
+end
+
+--// Notification System
+function Quantum:Notify(title, text, duration)
+    local NotifyFrame = Instance.new("Frame", self.Screen)
+    NotifyFrame.Size = UDim2.new(0, 250, 0, 60)
+    NotifyFrame.Position = UDim2.new(1, 10, 1, -70)
+    NotifyFrame.BackgroundColor3 = Theme.Main
+    NotifyFrame.BackgroundTransparency = 0.1
+    Instance.new("UICorner", NotifyFrame).CornerRadius = UDim.new(0, 8)
+    local Stroke = Instance.new("UIStroke", NotifyFrame)
+    Stroke.Color = Theme.Accent; Stroke.Thickness = 1.2
+
+    local T = Instance.new("TextLabel", NotifyFrame)
+    T.Size = UDim2.new(1, -10, 0, 25); T.Position = UDim2.new(0, 10, 0, 5)
+    T.Text = title; T.TextColor3 = Theme.Accent; T.Font = Enum.Font.GothamBold; T.TextSize = 14; T.BackgroundTransparency = 1; T.TextXAlignment = Enum.TextXAlignment.Left
+
+    local D = Instance.new("TextLabel", NotifyFrame)
+    D.Size = UDim2.new(1, -10, 0, 20); D.Position = UDim2.new(0, 10, 0, 25)
+    D.Text = text; D.TextColor3 = Theme.Text; D.Font = Enum.Font.Gotham; D.TextSize = 12; D.BackgroundTransparency = 1; D.TextXAlignment = Enum.TextXAlignment.Left
+
+    Tween(NotifyFrame, 0.5, {Position = UDim2.new(1, -260, 1, -70)})
+    task.delay(duration or 3, function()
+        Tween(NotifyFrame, 0.5, {Position = UDim2.new(1, 10, 1, -70)})
+        task.wait(0.5); NotifyFrame:Destroy()
+    end)
+end
+
+function Quantum:CreateWindow(cfg)
+    local self = setmetatable({}, Quantum)
+    self.Title = cfg.Title or "CostyTR Hub"
+    self.Keybind = cfg.Keybind or Enum.KeyCode.RightControl
+    self.IsVisible = true
+    
+    self.Screen = Instance.new("ScreenGui")
+    self.Screen.Name = "Quantum_Ultra"
+    self.Screen.Parent = (gethui and gethui()) or CoreGui
+
+    -- Intro: Quantum.nz
+    local function StartIntro()
+        local Blur = Instance.new("BlurEffect", Lighting)
+        local Logo = Instance.new("TextLabel", self.Screen)
+        Logo.Size = UDim2.new(1,0,1,0); Logo.Text = "Quantum.nz"; Logo.TextColor3 = Theme.Accent; Logo.Font = Enum.Font.GothamBold; Logo.TextSize = 80; Logo.BackgroundTransparency = 1; Logo.TextTransparency = 1
+        
+        Tween(Blur, 1, {Size = 25}); Tween(Logo, 1, {TextTransparency = 0})
+        task.wait(2); Tween(Logo, 1, {TextTransparency = 1, TextSize = 120}); Tween(Blur, 1, {Size = 0})
+        task.wait(1); Blur:Destroy(); Logo:Destroy()
+    end
+
+    -- Main Frame
+    self.Main = Instance.new("Frame", self.Screen)
+    self.Main.Size = UDim2.new(0, 650, 0, 450)
+    self.Main.Position = UDim2.new(0.5, -325, 0.5, -225)
+    self.Main.BackgroundColor3 = Theme.Main
+    self.Main.BackgroundTransparency = Theme.Transparency
+    self.Main.ClipsDescendants = true
+    Instance.new("UICorner", self.Main).CornerRadius = UDim.new(0, 12)
+    Instance.new("UIStroke", self.Main).Color = Theme.Outline
+
+    -- TopBar (Sürükleme Buradan)
+    local TopBar = Instance.new("Frame", self.Main)
+    TopBar.Size = UDim2.new(1, 0, 0, 45); TopBar.BackgroundTransparency = 1
+    
+    local Title = Instance.new("TextLabel", TopBar)
+    Title.Size = UDim2.new(1, -150, 1, 0); Title.Position = UDim2.new(0, 80, 0, 0)
+    Title.Text = "Quantum | Developed by CostyTR"; Title.TextColor3 = Theme.SubText; Title.Font = Enum.Font.GothamBold; Title.TextSize = 13; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- MacOS Butonlar
+    local function CreateMacBtn(color, pos, func)
+        local b = Instance.new("TextButton", TopBar)
+        b.Size = UDim2.new(0, 13, 0, 13); b.Position = pos; b.BackgroundColor3 = color; b.Text = ""
+        Instance.new("UICorner", b).CornerRadius = UDim.new(1, 0)
+        b.MouseButton1Click:Connect(func)
+    end
+    CreateMacBtn(Color3.fromRGB(255, 95, 87), UDim2.new(0, 15, 0.5, -6), function() self.Screen:Destroy() end)
+    CreateMacBtn(Color3.fromRGB(255, 189, 46), UDim2.new(0, 35, 0.5, -6), function() self:Toggle() end)
+    CreateMacBtn(Color3.fromRGB(40, 200, 64), UDim2.new(0, 55, 0.5, -6), function() self:Notify("CostyTR", "Menü Maksimum Boyuta Getirildi!", 2) end)
+
+    --// DRAG & RESIZE (Senin istediğin latex gibi esnek yapı)
+    local dragging, dragStart, startPos
+    TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging=true; dragStart=i.Position; startPos=self.Main.Position end end)
+    
+    local resizing, resStart, resSize
+    local Resizer = Instance.new("Frame", self.Main)
+    Resizer.Size = UDim2.new(0, 25, 0, 25); Resizer.Position = UDim2.new(1, -25, 1, -25); Resizer.BackgroundTransparency = 1; Resizer.ZIndex = 10
+    Resizer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then resizing=true; resStart=i.Position; resSize=self.Main.Size end end)
+
+    UserInputService.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - dragStart
+            self.Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        elseif resizing and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = i.Position - resStart
+            self.Main.Size = UDim2.new(0, math.max(500, resSize.X.Offset + delta.X), 0, math.max(350, resSize.Y.Offset + delta.Y))
+        end
+    end)
+    UserInputService.InputEnded:Connect(function() dragging=false; resizing=false end)
+
+    --// TOGGLE ANIMATION (Açma-Kapama Fix)
+    function self:Toggle()
+        self.IsVisible = not self.IsVisible
+        if self.IsVisible then
+            self.Main.Visible = true
+            Tween(self.Main, 0.5, {Size = UDim2.new(0, 650, 0, 450), BackgroundTransparency = Theme.Transparency}, Enum.EasingStyle.Back)
+        else
+            Tween(self.Main, 0.5, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, Enum.EasingStyle.Back)
+            task.wait(0.5); self.Main.Visible = false
+        end
+    end
+    UserInputService.InputBegan:Connect(function(i, p) if not p and i.KeyCode == self.Keybind then self:Toggle() end end)
+
+    -- Tab System Container
+    local TabContainer = Instance.new("ScrollingFrame", self.Main)
+    TabContainer.Size = UDim2.new(0, 160, 1, -60); TabContainer.Position = UDim2.new(0, 10, 0, 50); TabContainer.BackgroundTransparency = 1; TabContainer.ScrollBarThickness = 0
+    Instance.new("UIListLayout", TabContainer).Padding = UDim.new(0, 5)
+
+    local PageContainer = Instance.new("Frame", self.Main)
+    PageContainer.Size = UDim2.new(1, -190, 1, -60); PageContainer.Position = UDim2.new(0, 180, 0, 50); PageContainer.BackgroundTransparency = 1
+
+    task.spawn(function() StartIntro(); self.Main.Visible = true; Tween(self.Main, 0.6, {Size = UDim2.new(0, 650, 0, 450)}, Enum.EasingStyle.Back) end)
+
+    function self:CreateTab(name)
+        local Tab = {}
+        local Btn = Instance.new("TextButton", TabContainer)
+        Btn.Size = UDim2.new(1, 0, 0, 35); Btn.BackgroundColor3 = Color3.fromRGB(30,30,35); Btn.Text = name; Btn.TextColor3 = Theme.SubText; Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 13
+        Instance.new("UICorner", Btn)
+
+        local Page = Instance.new("ScrollingFrame", PageContainer)
+        Page.Size = UDim2.new(1, 0, 1, 0); Page.Visible = false; Page.BackgroundTransparency = 1; Page.ScrollBarThickness = 2
+        Instance.new("UIListLayout", Page).Padding = UDim.new(0, 8)
+
+        Btn.MouseButton1Click:Connect(function()
+            for _, v in pairs(PageContainer:GetChildren()) do v.Visible = false end
+            Page.Visible = true
+        end)
+        if #TabContainer:GetChildren() == 1 then Page.Visible = true end
+
+        --// Circular Knob (Radio/Volume Style)
+        function Tab:CreateKnob(text, min, max, def, cb)
+            local KnobFrame = Instance.new("Frame", Page)
+            KnobFrame.Size = UDim2.new(1, -10, 0, 100); KnobFrame.BackgroundColor3 = Color3.fromRGB(25,25,30); KnobFrame.BackgroundTransparency = 0.5
+            Instance.new("UICorner", KnobFrame)
+
+            local Title = Instance.new("TextLabel", KnobFrame)
+            Title.Size = UDim2.new(0, 100, 0, 100); Title.Text = text; Title.TextColor3 = Theme.Text; Title.Font = Enum.Font.GothamBold; Title.BackgroundTransparency = 1
+
+            local Outer = Instance.new("ImageLabel", KnobFrame)
+            Outer.Size = UDim2.new(0, 70, 0, 70); Outer.Position = UDim2.new(0.7, 0, 0.5, -35); Outer.Image = "rbxassetid://6031097063"; Outer.BackgroundTransparency = 1; Outer.ImageColor3 = Theme.Outline
+
+            local Inner = Instance.new("Frame", Outer)
+            Inner.Size = UDim2.new(0, 4, 0, 25); Inner.Position = UDim2.new(0.5, -2, 0, 5); Inner.BackgroundColor3 = Theme.Accent; Inner.AnchorPoint = Vector2.new(0.5, 0.5); Inner.Position = UDim2.new(0.5,0,0.5,0)
+            
+            local Val = def
+            local function Update(input)
+                local center = Outer.AbsolutePosition + (Outer.AbsoluteSize / 2)
+                local angle = math.atan2(input.Position.Y - center.Y, input.Position.X - center.X)
+                local deg = math.deg(angle) + 90
+                Outer.Rotation = deg
+                local percent = (deg % 360) / 360
+                Val = math.floor(min + (max - min) * percent)
+                cb(Val)
+            end
+
+            Outer.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then 
+                local conn; conn = RunService.RenderStepped:Connect(function() Update(UserInputService:GetMouseLocation()) end)
+                UserInputService.InputEnded:Connect(function(i2) if i2.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() end end)
+            end end)
+        end
+
+        function Tab:CreateButton(txt, cb)
+            local b = Instance.new("TextButton", Page)
+            b.Size = UDim2.new(1,-10,0,38); b.BackgroundColor3 = Color3.fromRGB(30,30,35); b.Text = txt .. " | Made by CostyTR"; b.TextColor3 = Theme.Text; b.Font = Enum.Font.GothamMedium; b.TextSize = 13
+            Instance.new("UICorner", b)
+            b.MouseButton1Click:Connect(cb)
+        end
+
+        return Tab
+    end
+    return self
+end
